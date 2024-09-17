@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSRM Route on Map with Place Names</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        .container {
+            margin: 20px;
+        }
+        input, button {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OSRM Route Map with Place Names</h1>
+        <form id="routeForm">
+            <label for="startPlace">Start Place:</label>
+            <input type="text" id="startPlace" required>
+            <label for="endPlace">End Place:</label>
+            <input type="text" id="endPlace" required>
+            <br>
+            <button type="submit">Get Route</button>
+        </form>
+        <div id="map"></div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([52.517037, 13.388860], 13);
+
+        // Add a tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var startMarker, endMarker, routePolyline;
+
+        document.getElementById('routeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get place names from input fields
+            var startPlace = document.getElementById('startPlace').value;
+            var endPlace = document.getElementById('endPlace').value;
+            
+            // Clear existing markers and polyline
+            if (startMarker) map.removeLayer(startMarker);
+            if (endMarker) map.removeLayer(endMarker);
+            if (routePolyline) map.removeLayer(routePolyline);
+            
+            // Geocode start and end places
+            geocodePlace(startPlace, function(startCoords) {
+                geocodePlace(endPlace, function(endCoords) {
+                    // Add markers for start and end points
+                    startMarker = L.marker(startCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/228919/ambulance.svg', iconSize: [100, 100], iconAnchor: [12, 41]})})
+                        .addTo(map)
+                        .bindPopup('Start Point')
+                        .openPopup();
+
+                    endMarker = L.marker(endCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/500071/hospital.svg', iconSize: [100, 100], iconAnchor: [12, 41]})})
+                        .addTo(map)
+                        .bindPopup('End Point')
+                        .openPopup();
+
+                    // Fetch the route from OSRM
+                    var routeUrl = `http://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=false`;
+                    fetch(routeUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            var route = data.routes[0].geometry;
+                            var routeCoords = L.GeoJSON.coordsToLatLngs(route, 0);
+                            routePolyline = L.polyline(routeCoords, {color: 'blue'}).addTo(map);
+                            map.fitBounds(routePolyline.getBounds());
+                        })
+                        .catch(error => console.error('Error fetching the route:', error));
+                });
+            });
+        });
+
+        function geocodePlace(place, callback) {
+            var geocodeUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&addressdetails=1&limit=1`;
+            fetch(geocodeUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        var coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                        callback(coords);
+                    } else {
+                        alert('Place not found: ' + place);
+                    }
+                })
+                .catch(error => console.error('Error geocoding the place:', error));
+        }
+    </script>
+</body>
+</html>
