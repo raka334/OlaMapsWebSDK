@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSRM Route on Map with Place Names</title>
+    <title>Get the Path for ambulance</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
@@ -20,11 +20,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>OSRM Route Map with Place Names</h1>
+        <h1>Calacuate the distance for hospitals</h1>
         <form id="routeForm">
-            <label for="startPlace">Start Place:</label>
+            <label for="startPlace">Start Point:</label>
             <input type="text" id="startPlace" required>
-            <label for="endPlace">End Place:</label>
+            <label for="endPlace">End Point:</label>
             <input type="text" id="endPlace" required>
             <br>
             <button type="submit">Get Route</button>
@@ -36,7 +36,6 @@
     <script>
         var map = L.map('map').setView([52.517037, 13.388860], 13);
 
-        // Add a tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
@@ -46,19 +45,14 @@
         document.getElementById('routeForm').addEventListener('submit', function(event) {
             event.preventDefault();
             
-            // Get place names from input fields
             var startPlace = document.getElementById('startPlace').value;
             var endPlace = document.getElementById('endPlace').value;
-            
-            // Clear existing markers and polyline
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
             if (routePolyline) map.removeLayer(routePolyline);
             
-            // Geocode start and end places
             geocodePlace(startPlace, function(startCoords) {
                 geocodePlace(endPlace, function(endCoords) {
-                    // Add markers for start and end points
                     startMarker = L.marker(startCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/228919/ambulance.svg', iconSize: [100, 100], iconAnchor: [12, 41]})})
                         .addTo(map)
                         .bindPopup('Start Point')
@@ -69,7 +63,6 @@
                         .bindPopup('End Point')
                         .openPopup();
 
-                    // Fetch the route from OSRM
                     var routeUrl = `http://router.project-osrm.org/route/v1/driving/${startCoords[1]},${startCoords[0]};${endCoords[1]},${endCoords[0]}?overview=false`;
                     fetch(routeUrl)
                         .then(response => response.json())
