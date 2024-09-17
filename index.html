@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Get the Path for ambulance</title>
+    <title>Get the Path for Ambulance</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         #map {
@@ -16,11 +16,14 @@
         input, button {
             margin: 5px;
         }
+        #distance {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Calacuate the distance for hospitals</h1>
+        <h1>Calculate the Distance Between Points</h1>
         <form id="routeForm">
             <label for="startPlace">Start Point:</label>
             <input type="text" id="startPlace" required>
@@ -29,7 +32,9 @@
             <br>
             <button type="submit">Get Route</button>
         </form>
+        <div id="distance">Total Distance</div>
         <div id="map"></div>
+        
     </div>
     
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -47,18 +52,20 @@
             
             var startPlace = document.getElementById('startPlace').value;
             var endPlace = document.getElementById('endPlace').value;
+            
             if (startMarker) map.removeLayer(startMarker);
             if (endMarker) map.removeLayer(endMarker);
             if (routePolyline) map.removeLayer(routePolyline);
-            
+            document.getElementById('distance').innerText = '';
+
             geocodePlace(startPlace, function(startCoords) {
                 geocodePlace(endPlace, function(endCoords) {
-                    startMarker = L.marker(startCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/228919/ambulance.svg', iconSize: [100, 100], iconAnchor: [12, 41]})})
+                    startMarker = L.marker(startCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/228919/ambulance.svg', iconSize: [50, 50], iconAnchor: [25, 50]})})
                         .addTo(map)
                         .bindPopup('Start Point')
                         .openPopup();
 
-                    endMarker = L.marker(endCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/500071/hospital.svg', iconSize: [100, 100], iconAnchor: [12, 41]})})
+                    endMarker = L.marker(endCoords, {icon: L.icon({iconUrl: 'https://www.svgrepo.com/show/500071/hospital.svg', iconSize: [50, 50], iconAnchor: [25, 50]})})
                         .addTo(map)
                         .bindPopup('End Point')
                         .openPopup();
@@ -73,6 +80,9 @@
                             map.fitBounds(routePolyline.getBounds());
                         })
                         .catch(error => console.error('Error fetching the route:', error));
+
+                    var distance = calculateDistance(startCoords[0], startCoords[1], endCoords[0], endCoords[1]);
+                    document.getElementById('distance').innerText = 'Distance: ' + distance.toFixed(2) + ' km';
                 });
             });
         });
@@ -90,6 +100,21 @@
                     }
                 })
                 .catch(error => console.error('Error geocoding the place:', error));
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            var R = 6371; 
+            var dLat = toRadians(lat2 - lat1);
+            var dLon = toRadians(lon2 - lon1);
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; 
+        }
+
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
         }
     </script>
 </body>
